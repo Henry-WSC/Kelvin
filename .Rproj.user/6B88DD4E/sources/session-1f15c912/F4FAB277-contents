@@ -1,0 +1,80 @@
+---
+title: "Potato"
+author: "Kelvin Llanos"
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+# Cargar bibliotecas y datos
+library(readxl)
+fb <- read_excel("Datos/LA MOLINA 2014 POTATO WUE (FB).xlsx", 
+    sheet = "fb", col_types = c("text", "text", 
+        "text", "text", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric", "numeric", "numeric"))
+View(fb)
+str(fb)
+
+
+```
+
+```{r}
+# Análisis de datos
+library(tidyverse)
+library(googlesheets4)
+
+```
+
+```{r}
+# Modelo estadístico
+modelo <- aov(formula = lfa ~ bloque + riego*geno, data = fb)
+anova(modelo)
+plot(modelo)
+```
+
+```{r}
+# Comparación de medias
+library(agricolae)
+mc <- agricolae::duncan.test(y = modelo,
+                             trt = c("riego","geno"))
+mc
+str(mc)
+```
+
+```{r}
+# Análisis con emmeans
+library(emmeans)
+library(multcomp)
+library(tidyverse)
+library(inti)
+
+mc <- emmeans(modelo, ~ riego | geno)
+mc_cld <- mc %>%
+  cld(Letters = letters, reversed = TRUE)
+mc_cld
+```
+
+```{r}
+# Gráfico con inti
+library(inti)
+plot_smr(data = mc_cld,
+         type = "bar",
+         x = "geno",
+         y = "emmean",
+         group = "riego",
+         sig = ".group",
+         error = "SE",
+         ylimits = c(0, 12000, 2000))
+```
+
+```{r}
+# Gráfico con ggplot2
+ggplot(mc_cld, aes(x = geno, y = emmean, fill = riego)) + 
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  labs(title = "Gráfico de barras", x = "Categoría", y = "Valores")
+```
